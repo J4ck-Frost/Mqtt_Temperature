@@ -9,10 +9,11 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class TemperatureSubscriberService implements MqttCallback {
+public class TemperatureSubscriberService implements MqttCallbackExtended {
     private static final String TOPIC = "sensor/temperature";
     private final MqttClient mqttClient;
     private static final int QQS = 2;
+    private static final String BROKER = "tcp://localhost:1883";
 
     @PostConstruct
     public void subscribe() {
@@ -42,5 +43,15 @@ public class TemperatureSubscriberService implements MqttCallback {
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
         // Optional: Handle delivery completion if needed
+    }
+
+    @Override
+    public void connectComplete(boolean b, String s) {
+        log.info("Reconnected to broker at {}. Re-subscribing to topic...", BROKER);
+        try {
+            mqttClient.subscribe(TOPIC, QQS);
+        } catch (MqttException e) {
+            log.error("Resubscribe failed: {}", e.getMessage(), e);
+        }
     }
 }
